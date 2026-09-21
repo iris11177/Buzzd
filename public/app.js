@@ -263,6 +263,17 @@
     $('#qCounter').textContent = `Question ${q.index} of ${q.total}`;
     $('#qMeta').textContent = `${q.category}, ${q.difficulty}`;
     $('#qText').textContent = q.text;
+    $('#qQuote').hidden = !q.quote;
+    $('#qQuote').textContent = q.quote || '';
+    const fig = $('#qFigure');
+    fig.hidden = !q.image;
+    if (q.image) {
+      $('#qImage').src = q.image;
+      $('#qCredit').textContent = q.imageCredit || '';
+      fig.dataset.source = q.imageSource || '';
+    } else {
+      $('#qImage').removeAttribute('src');
+    }
     $('#qStatus').textContent = '';
     $('#qStatus').className = 'q-status';
 
@@ -378,6 +389,8 @@
       showView('stage');
       $('#loadingText').hidden = false;
       $('#qText').textContent = '';
+      $('#qQuote').hidden = true;
+      $('#qFigure').hidden = true;
       $('#choices').innerHTML = '';
       $('#qStatus').textContent = '';
       $('#qCounter').textContent = '';
@@ -413,6 +426,15 @@
       else if (i === state.myAnswer) b.classList.add('wrong');
       b.append(el('span', 'votes', `${counts[i]} picked`));
     });
+    const fig = $('#qFigure');
+    if (!fig.hidden && fig.dataset.source) {
+      const credit = $('#qCredit');
+      const a = el('a', null, credit.textContent);
+      a.href = fig.dataset.source;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      credit.replaceChildren(a);
+    }
     if (state.myAnswer == null) {
       const s = $('#qStatus');
       s.textContent = 'Time is up. Be quicker next round!';

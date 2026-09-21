@@ -331,3 +331,27 @@ select:disabled { background: var(--paper-2); color: var(--muted); }
   .choice:hover:not(:disabled) { background: #FFF1CC; }
 }
 button { -webkit-tap-highlight-color: transparent; }
+
+/* picture & quote questions */
+.q-figure { margin: 0 0 1rem; text-align: center; }
+.q-figure img {
+  display: block; margin: 0 auto;
+  max-width: 100%; max-height: 260px;
+  border: var(--line); border-radius: 12px; box-shadow: 4px 4px 0 var(--ink);
+  background: var(--paper-2);
+}
+.q-credit { font-size: .72rem; color: var(--muted); margin-top: .5rem; overflow-wrap: anywhere; }
+.q-credit a { color: inherit; }
+.q-quote {
+  margin: -.4rem 0 1.4rem; padding: .9rem 1.1rem .9rem 1.3rem;
+  background: #fff; border: var(--line); border-left-width: 8px; border-left-color: var(--coral);
+  border-radius: 12px;
+  font-size: clamp(1.1rem, 2.2vw, 1.35rem); font-weight: 600; font-style: italic;
+}
+.q-quote::before { content: '\201C'; }
+.q-quote::after { content: '\201D'; }
+@media (max-width: 720px) {
+  .q-figure img { max-height: 170px; }
+  .q-figure { margin-bottom: .6rem; }
+  .q-credit { margin-top: .3rem; }
+}
