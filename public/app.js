@@ -124,8 +124,29 @@
   fillSelect($('#setTime'), OPTIONS.time, (n) => `${n} seconds`);
   fillSelect($('#setHints'), OPTIONS.hints);
   fillSelect($('#setDifficulty'), OPTIONS.difficulty);
+  let aiEnabled = false;
+  function fillCategories(cats) {
+    const sel = $('#setCategory');
+    sel.innerHTML = '';
+    const groups = {};
+    cats.forEach((c) => {
+      const label = c.group === 'Philippines' ? '🇵🇭 Philippines' : '🌍 World';
+      if (!groups[label]) {
+        groups[label] = document.createElement('optgroup');
+        groups[label].label = label;
+        sel.append(groups[label]);
+      }
+      const o = el('option', null, c.name);
+      o.value = c.id;
+      groups[label].append(o);
+    });
+  }
   fetch('/api/categories').then((r) => r.json())
-    .then((cats) => { fillSelect($('#setCategory'), cats.map((c) => [c.id, c.name])); if (state.room) renderLobby(state.room); })
+    .then((data) => {
+      aiEnabled = Boolean(data.aiEnabled);
+      fillCategories(data.categories || []);
+      if (state.room) renderLobby(state.room);
+    })
     .catch(() => fillSelect($('#setCategory'), [['any', 'Any category']]));
 
   const settingSelects = ['#setRounds', '#setTime', '#setHints', '#setDifficulty', '#setCategory'];
@@ -177,6 +198,7 @@
     $('#setHints').value = s.hints;
     $('#setDifficulty').value = s.difficulty;
     $('#setCategory').value = s.category;
+    $('#aiNote').hidden = !(aiEnabled && s.category.startsWith('ph-'));
     settingSelects.forEach((id) => { $(id).disabled = !isHost; });
     $('#inviteLink').value = `${location.origin}/?room=${room.code}`;
     $('#btnStart').hidden = !isHost;
