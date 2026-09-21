@@ -92,11 +92,9 @@ h2 { font-size: 1.25rem; font-weight: 800; }
   cursor: pointer;
   transition: transform .08s, box-shadow .08s;
 }
-.btn:hover { background: #fff; }
 .btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
 .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: 3px 3px 0 var(--ink); }
 .btn.primary { background: var(--marigold); }
-.btn.primary:hover { background: #FFCF63; }
 .btn.big { width: 100%; font-size: 1.15rem; padding: .85rem 1rem; }
 .btn.slim { padding: .35rem .8rem; font-size: .95rem; }
 
@@ -105,7 +103,6 @@ h2 { font-size: 1.25rem; font-weight: 800; }
   width: 2.4rem; height: 2.4rem;
   background: none; border: none; color: var(--ink); cursor: pointer; border-radius: 50%;
 }
-.icon-btn:hover { background: var(--paper-2); }
 
 .field { display: flex; flex-direction: column; gap: .3rem; font-weight: 600; font-size: .95rem; }
 input, select {
@@ -232,7 +229,6 @@ select:disabled { background: var(--paper-2); color: var(--muted); }
   cursor: pointer;
   transition: transform .08s, box-shadow .08s, opacity .25s;
 }
-.choice:hover:not(:disabled) { background: #FFF1CC; }
 .choice:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: none; }
 .choice:disabled { cursor: default; }
 .choice .key {
@@ -325,3 +321,13 @@ select:disabled { background: var(--paper-2); color: var(--muted); }
   .stage-top { flex-wrap: wrap; }
   .q-meta { order: 3; flex-basis: 100%; }
 }
+
+/* Hover colors only on devices with a real mouse. On phones, a tap leaves a "sticky hover"
+   that made a choice in the next question look highlighted. */
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { background: #fff; }
+  .btn.primary:hover { background: #FFCF63; }
+  .icon-btn:hover { background: var(--paper-2); }
+  .choice:hover:not(:disabled) { background: #FFF1CC; }
+}
+button { -webkit-tap-highlight-color: transparent; }
