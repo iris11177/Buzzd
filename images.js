@@ -8,9 +8,9 @@ const crypto = require('crypto');
 
 const UA = process.env.WIKI_USER_AGENT || 'BuzzdTrivia/1.0 (https://buzzd.onrender.com)';
 const OK_TTL = 24 * 3600 * 1000;
-const FAIL_TTL = 3600 * 1000;
+const FAIL_TTL = 5 * 60 * 1000; // retry failed photos after 5 minutes
 const MAX_IMAGES = 300;
-const MAX_BYTES = 1.5 * 1024 * 1024;
+const MAX_BYTES = 2.5 * 1024 * 1024;
 
 const byTitle = new Map(); // title -> { status: 'pending' | 'ok' | 'fail', id, t, promise }
 const byId = new Map();    // id -> { buf, type, credit, source, t }
@@ -31,7 +31,7 @@ async function load(title) {
   if (/\.svg$/i.test(name)) throw new Error('drawing or map, not a photo');
 
   const commons = await getJSON('https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=2'
-    + `&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=720&titles=${encodeURIComponent(`File:${name}`)}`);
+    + `&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=960&titles=${encodeURIComponent(`File:${name}`)}`);
   const page = commons.query && commons.query.pages && commons.query.pages[0];
   const info = page && !page.missing && page.imageinfo && page.imageinfo[0];
   if (!info) throw new Error('not a free Commons image');
@@ -64,7 +64,7 @@ function prepare(title) {
   entry.promise = load(title)
     .then((id) => { Object.assign(entry, { status: 'ok', id, t: Date.now() }); return true; })
     .catch((err) => {
-      Object.assign(entry, { status: 'fail', t: Date.now() });
+      Object.assign(entry, { status: 'fail', t: Date.now(), error: err.message });
       console.warn(`[images] skipped "${title}": ${err.message}`);
       return false;
     });
@@ -99,4 +99,15 @@ function serve(req, res) {
   res.send(img.buf);
 }
 
-module.exports = { prepare, ready, warm, serve };
+// Diagnostics page: /api/images-status
+function status(_req, res) {
+  const out = { loaded: 0, loading: 0, failed: 0, problems: {} };
+  for (const [title, e] of byTitle) {
+    if (e.status === 'ok') out.loaded++;
+    else if (e.status === 'pending') out.loading++;
+    else { out.failed++; out.problems[title] = e.error; }
+  }
+  res.json(out);
+}
+
+module.exports = { prepare, ready, warm, serve, status };

@@ -12,6 +12,7 @@ app.disable('x-powered-by');
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'], maxAge: '1h' }));
 app.get('/api/categories', (_req, res) => res.json({ categories: CATEGORY_LIST, aiEnabled }));
 app.get('/img/:id', require('./images').serve); // photos for picture questions
+app.get('/api/images-status', require('./images').status); // check which photos loaded
 app.get('/healthz', (_req, res) => res.send('ok'));
 
 const server = http.createServer(app);
