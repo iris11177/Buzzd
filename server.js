@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 app.disable('x-powered-by');
-app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'], maxAge: '1h' }));
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'], maxAge: 0 })); // browsers always check for the newest version
 app.get('/api/categories', (_req, res) => res.json({ categories: CATEGORY_LIST, aiEnabled }));
 app.get('/img/:id', require('./images').serve); // photos for picture questions
 app.get('/api/images-status', require('./images').status); // check which photos loaded
