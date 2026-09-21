@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Buzzd – Free multiplayer trivia game with friends</title>
+  <meta name="description" content="Play free online trivia with friends or random players. Create a private room, choose rounds, hints and difficulty, and race to the top of the ranking.">
+  <link rel="canonical" href="https://YOURDOMAIN.com/">
+  <meta property="og:title" content="Buzzd – Multiplayer trivia with friends">
+  <meta property="og:description" content="Join a random room or invite friends to a private trivia match. No sign-up.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://YOURDOMAIN.com/">
+  <meta name="theme-color" content="#3B1777">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23FFC23D'/%3E%3Ctext x='50' y='74' font-size='70' font-family='Arial Black,Arial' font-weight='900' text-anchor='middle' fill='%231F0B3D'%3EB%3C/text%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+
+  <!-- Google AdSense: replace ca-pub-XXXXXXXXXXXXXXXX with your publisher ID (also in every <ins> below) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebApplication","name":"Buzzd","applicationCategory":"GameApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0"},"description":"Free real-time multiplayer trivia game with public and private rooms."}
+  </script>
+</head>
+<body>
+  <div id="connBanner" class="conn-banner" role="status" hidden>Connection lost. Reconnecting…</div>
+
+  <!-- HOME -->
+  <main id="screen-home" class="screen active">
+    <header class="hero">
+      <h1 class="logo" aria-label="Buzzd">
+        <span>B</span><span>u</span><span class="zap">z</span><span class="zap">z</span><span>d</span>
+      </h1>
+      <p class="tagline">Real-time trivia with friends or strangers. Answer right, answer fast, climb the ranking.</p>
+    </header>
+
+    <section class="panel entry" aria-label="Start playing">
+      <div class="profile">
+        <div class="avatar-pick">
+          <button id="avPrev" class="icon-btn" aria-label="Previous avatar">‹</button>
+          <span id="avatar" class="avatar big" aria-live="polite">🦊</span>
+          <button id="avNext" class="icon-btn" aria-label="Next avatar">›</button>
+        </div>
+        <label class="field">
+          <span>Your name</span>
+          <input id="name" maxlength="16" autocomplete="nickname" placeholder="Type a nickname">
+        </label>
+      </div>
+
+      <button id="btnJoinInvite" class="btn primary big" hidden>Join room <span id="inviteCode"></span></button>
+      <button id="btnPlay" class="btn primary big">Play with random players</button>
+      <button id="btnCreate" class="btn big">Create private room</button>
+
+      <form id="joinForm" class="join-code">
+        <label class="sr-only" for="codeInput">Room code</label>
+        <input id="codeInput" maxlength="5" placeholder="Have a room code?" autocomplete="off">
+        <button class="btn" type="submit">Join</button>
+      </form>
+      <p id="homeError" class="error" role="alert"></p>
+    </section>
+
+    <div class="ad ad-banner">
+      <span class="ad-label">Advertisement</span>
+      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="1111111111" data-ad-format="horizontal" data-full-width-responsive="true"></ins>
+    </div>
+
+    <section class="howto" aria-labelledby="howtoTitle">
+      <h2 id="howtoTitle">How to play</h2>
+      <ol class="steps">
+        <li><strong>Pick a room.</strong> Jump into a random room, or create a private one and send the invite link to your friends.</li>
+        <li><strong>Set the game.</strong> In a private room the host chooses the number of rounds, time per question, hints, difficulty and category.</li>
+        <li><strong>Answer fast.</strong> Everyone sees the same question. Correct answers earn more points the quicker you are, with a bonus for streaks.</li>
+        <li><strong>Watch for hints.</strong> As the timer runs down, wrong choices disappear one by one. Waiting makes it easier but earns fewer points.</li>
+      </ol>
+    </section>
+
+    <footer class="site-foot">
+      <a href="/privacy">Privacy policy</a>
+      <span>Questions from the <a href="https://opentdb.com" rel="noopener" target="_blank">Open Trivia Database</a>, CC BY-SA 4.0</span>
+    </footer>
+  </main>
+
+  <!-- ROOM -->
+  <main id="screen-room" class="screen">
+    <div class="room-bar">
+      <a class="logo small" href="/" aria-label="Buzzd home">Buzzd</a>
+      <span id="roomLabel" class="room-label"></span>
+      <button id="btnLeave" class="btn slim">Leave</button>
+    </div>
+
+    <div class="room-grid">
+      <aside class="panel players" aria-labelledby="playersTitle">
+        <h2 id="playersTitle">Ranking <span id="playerCount" class="count"></span></h2>
+        <ol id="playerList" class="plist"></ol>
+      </aside>
+
+      <section class="center">
+        <!-- Lobby -->
+        <div id="view-lobby" class="panel view">
+          <div id="publicWait" class="public-wait" hidden>
+            <h2>Finding players</h2>
+            <p id="publicWaitText" class="muted">The game starts as soon as 2 players are here.</p>
+            <div id="publicCountdown" class="countdown" aria-live="polite"></div>
+          </div>
+
+          <div id="privateLobby" hidden>
+            <h2>Game settings</h2>
+            <div class="settings">
+              <label class="field"><span>Rounds</span><select id="setRounds"></select></label>
+              <label class="field"><span>Seconds per question</span><select id="setTime"></select></label>
+              <label class="field"><span>Hints</span><select id="setHints"></select></label>
+              <label class="field"><span>Difficulty</span><select id="setDifficulty"></select></label>
+              <label class="field wide"><span>Category</span><select id="setCategory"></select></label>
+            </div>
+            <p id="aiNote" class="ai-note" hidden>🇵🇭 Fresh Philippine questions are written by AI from the latest news. They're checked for accuracy, but a mistake can slip through now and then.</p>
+            <div class="invite">
+              <label class="field wide"><span>Invite your friends</span><input id="inviteLink" readonly></label>
+              <button id="btnCopy" class="btn">Copy link</button>
+            </div>
+            <button id="btnStart" class="btn primary big">Start game</button>
+            <p id="waitHost" class="muted center-text">Waiting for the host to start the game.</p>
+          </div>
+        </div>
+
+        <!-- Question -->
+        <div id="view-stage" class="panel view stage" hidden>
+          <div class="stage-top">
+            <span id="qCounter" class="q-counter"></span>
+            <span id="qMeta" class="q-meta"></span>
+            <span id="qTime" class="q-time" aria-live="off"></span>
+          </div>
+          <div class="timer" aria-hidden="true"><div id="timerBar"></div></div>
+          <p id="loadingText" class="loading" hidden>Getting your questions…</p>
+          <h2 id="qText" class="question"></h2>
+          <div id="choices" class="choices"></div>
+          <p id="qStatus" class="q-status" aria-live="polite"></p>
+        </div>
+
+        <!-- Results -->
+        <div id="view-results" class="panel view results" hidden>
+          <h2>Final ranking</h2>
+          <div id="podium" class="podium"></div>
+          <ol id="restList" class="plist rest" start="4"></ol>
+          <div class="result-actions">
+            <button id="btnAgain" class="btn primary big">Play again</button>
+            <p id="againNote" class="muted center-text"></p>
+          </div>
+          <div class="ad ad-results">
+            <span class="ad-label">Advertisement</span>
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="2222222222" data-ad-format="auto" data-full-width-responsive="true"></ins>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="panel chat" aria-labelledby="chatTitle">
+          <h2 id="chatTitle" class="sr-only">Chat</h2>
+          <ul id="chatLog" class="chat-log" aria-live="polite"></ul>
+          <form id="chatForm" class="chat-form">
+            <label class="sr-only" for="chatInput">Message</label>
+            <input id="chatInput" maxlength="120" placeholder="Say something" autocomplete="off">
+          </form>
+        </section>
+        <div class="ad ad-side">
+          <span class="ad-label">Advertisement</span>
+          <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="3333333333" data-ad-format="rectangle"></ins>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
