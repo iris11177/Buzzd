@@ -3,14 +3,14 @@ const path = require('path');
 const http = require('http');
 const express = require('express');
 const { Server } = require('socket.io');
-const { fetchQuestions, CATEGORY_LIST, CATEGORY_IDS } = require('./questions');
+const { fetchQuestions, prewarm, CATEGORY_LIST, CATEGORY_IDS, aiEnabled } = require('./questions');
 
 const PORT = process.env.PORT || 3000;
 
 const app = express();
 app.disable('x-powered-by');
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'], maxAge: '1h' }));
-app.get('/api/categories', (_req, res) => res.json(CATEGORY_LIST));
+app.get('/api/categories', (_req, res) => res.json({ categories: CATEGORY_LIST, aiEnabled }));
 app.get('/healthz', (_req, res) => res.send('ok'));
 
 const server = http.createServer(app);
@@ -25,7 +25,8 @@ const OPTIONS = {
   hints: [0, 1, 2],
   difficulty: ['mixed', 'easy', 'medium', 'hard'],
 };
-const PUBLIC_SETTINGS = { rounds: 10, time: 20, hints: 1, difficulty: 'mixed', category: 'any' };
+// Public rooms use PUBLIC_CATEGORY (set it to e.g. ph-all on Render to make random games Philippine-themed)
+const PUBLIC_SETTINGS = { rounds: 10, time: 20, hints: 1, difficulty: 'mixed', category: process.env.PUBLIC_CATEGORY || 'any' };
 const PRIVATE_DEFAULTS = { rounds: 10, time: 20, hints: 1, difficulty: 'mixed', category: 'any' };
 const BASE_POINTS = { easy: 100, medium: 150, hard: 200 };
 const REVEAL_MS = 5000;
@@ -69,6 +70,7 @@ function createRoom(isPublic) {
     startsAt: null,
   };
   rooms.set(room.code, room);
+  if (isPublic) prewarm(room.settings.category);
   return room;
 }
 
@@ -322,6 +324,7 @@ io.on('connection', (socket) => {
     if (OPTIONS.difficulty.includes(s.difficulty)) next.difficulty = s.difficulty;
     if (CATEGORY_IDS.has(s.category)) next.category = s.category;
     room.settings = next;
+    prewarm(next.category); // start writing Philippine questions while the host sets up
     broadcast(room);
   });
 

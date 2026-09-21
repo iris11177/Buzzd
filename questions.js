@@ -4,6 +4,8 @@
 // the API's rate limit (1 request per 5 seconds per IP). If the API is down, a built-in
 // question bank keeps games running.
 
+const { getPhQuestions, prewarm, isPhCategory, PH_CATEGORY_LIST, aiEnabled } = require('./ph');
+
 const API = 'https://opentdb.com';
 
 const CATEGORIES = [
@@ -23,8 +25,11 @@ const CATEGORIES = [
   { id: 'animals', name: 'Animals', otdb: 27 },
   { id: 'mythology', name: 'Mythology', otdb: 20 },
 ];
-const CATEGORY_LIST = CATEGORIES.map(({ id, name }) => ({ id, name }));
-const CATEGORY_IDS = new Set(CATEGORIES.map((c) => c.id));
+const CATEGORY_LIST = [
+  ...PH_CATEGORY_LIST,
+  ...CATEGORIES.map(({ id, name }) => ({ id, name, group: 'World' })),
+];
+const CATEGORY_IDS = new Set(CATEGORY_LIST.map((c) => c.id));
 
 // [difficulty, question, correct, wrong1, wrong2, wrong3, category]
 const FALLBACK = [
@@ -164,6 +169,8 @@ function fallback(amount, difficulty, exclude) {
 }
 
 async function fetchQuestions({ amount, difficulty, category }) {
+  if (isPhCategory(category)) return getPhQuestions({ amount, difficulty, category });
+
   const key = `${difficulty}|${category}`;
   let pool = poolFor(key);
 
@@ -182,4 +189,4 @@ async function fetchQuestions({ amount, difficulty, category }) {
   return out;
 }
 
-module.exports = { fetchQuestions, CATEGORY_LIST, CATEGORY_IDS };
+module.exports = { fetchQuestions, prewarm, CATEGORY_LIST, CATEGORY_IDS, aiEnabled };
