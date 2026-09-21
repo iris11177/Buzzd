@@ -3,6 +3,8 @@
 // events, showbiz and social media, Claude searches the web first so questions stay fresh.
 // Without an ANTHROPIC_API_KEY, the built-in Philippine question bank below is used.
 
+const images = require('./images');
+
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5';
@@ -59,6 +61,29 @@ const PH_TOPICS = {
     search: true,
     ttl: 24 * HOUR,
     brief: 'Philippine sports: basketball (PBA, UAAP, NCAA, Gilas Pilipinas, Filipino NBA links), boxing, volleyball (PVL, Alas Pilipinas), Olympic and SEA Games athletes, billiards, and recent results. Energetic tone.',
+  },
+  'ph-genz': {
+    name: 'Taglish & Gen Z vibes',
+    label: 'Taglish & Gen Z',
+    search: true,
+    ttl: 12 * HOUR,
+    brief: 'Gen Z and millennial Filipino life, written in playful Taglish: slang and new words, dating and "jowa" culture, hugot, barkada and family moments (titas, nanay), school and work life, commuting, food trips, online shopping, and what young Filipinos are talking about online right now. Relatable and funny, like a meme page.',
+  },
+  'ph-quotes': {
+    name: 'Who said it? 🗣️',
+    label: 'Who said it?',
+    search: true,
+    ttl: 24 * HOUR,
+    kind: 'quote',
+    brief: '"Who said it?" questions: famous lines from Filipino movies and teleseryes, TV catchphrases, iconic pageant answers, historical quotes from heroes and presidents, and memorable public statements that went viral recently. Only real, well-documented quotes.',
+  },
+  'ph-pics': {
+    name: 'Picture this! 📸',
+    label: 'Picture this!',
+    search: false,
+    ttl: 7 * 24 * HOUR,
+    kind: 'image',
+    brief: 'Picture questions: Philippine landmarks, tourist spots, churches and heritage sites, Filipino dishes and desserts, native animals, traditional objects, clothing, dances and games, and historical heroes (portraits). Ask things like "Anong lugar \'to?" or "Anong ulam \'to?".',
   },
 };
 
@@ -238,17 +263,108 @@ const BANK = [
   ["social", "hard", "Which name is given to Filipino gay lingo?", "Swardspeak", "Jejemon", "Conyo", "Taglish"],
   ["social", "hard", "Typing \"3ow p0wh\" with odd letters and numbers is linked to which online subculture?", "Jejemon", "Conyo", "Marites", "Bekimon"],
   ["social", "hard", "\"Let's make kain na!\" is a classic example of which way of talking?", "Conyo", "Jejemon", "Swardspeak", "Deep Tagalog"],
+  // ---- Picture, quote and Taglish questions ----
+  ["culture", "easy", "📸 Anong lugar 'to?", "Chocolate Hills", "Banaue Rice Terraces", "Mount Pinatubo", "Kawasan Falls", {"img": "Chocolate Hills"}],
+  ["culture", "easy", "📸 Which volcano is this?", "Mayon Volcano", "Taal Volcano", "Mount Pinatubo", "Kanlaon Volcano", {"img": "Mayon"}],
+  ["culture", "medium", "📸 Anong lugar 'to?", "Banaue Rice Terraces", "Chocolate Hills", "Mount Pulag", "Sagada Hanging Coffins", {"img": "Banaue Rice Terraces"}],
+  ["culture", "medium", "📸 Saan 'to sa Pinas?", "Puerto Princesa Underground River", "Kawasan Falls", "Hinatuan Enchanted River", "Taal Lake", {"img": "Puerto Princesa Subterranean River National Park"}],
+  ["culture", "medium", "📸 Which heritage city is this?", "Vigan", "Intramuros", "Taal, Batangas", "Silay", {"img": "Vigan"}],
+  ["culture", "medium", "📸 Which famous landmark is this?", "Magellan's Cross", "Fort Santiago", "Rizal Monument", "Quezon Memorial Shrine", {"img": "Magellan's Cross"}],
+  ["culture", "hard", "📸 Which UNESCO-listed church is this?", "San Agustin Church, Manila", "Manila Cathedral", "Quiapo Church", "Baclaran Church", {"img": "San Agustin Church (Manila)"}],
+  ["culture", "medium", "📸 Anong volcano 'to?", "Taal Volcano", "Mayon Volcano", "Mount Apo", "Mount Pinatubo", {"img": "Taal Volcano"}],
+  ["culture", "easy", "📸 Anong dessert 'to?", "Halo-halo", "Mais con yelo", "Buko pandan", "Saba con yelo", {"img": "Halo-halo"}],
+  ["culture", "easy", "📸 Anong ulam 'to?", "Sinigang", "Tinola", "Nilaga", "Bulalo", {"img": "Sinigang"}],
+  ["culture", "easy", "📸 Anong ulam 'to?", "Kare-kare", "Dinuguan", "Caldereta", "Menudo", {"img": "Kare-kare"}],
+  ["culture", "easy", "📸 Anong pulutan 'to?", "Sisig", "Chicharon bulaklak", "Tokwa't baboy", "Kilawin", {"img": "Sisig"}],
+  ["culture", "easy", "📸 Anong street food 'to?", "Kwek-kwek", "Fish balls", "Squid balls", "Tokneneng", {"img": "Kwek-kwek"}],
+  ["culture", "medium", "📸 Anong kakanin 'to?", "Bibingka", "Puto", "Kutsinta", "Sapin-sapin", {"img": "Bibingka"}],
+  ["culture", "medium", "📸 Anong Pasko food 'to?", "Puto bumbong", "Biko", "Suman", "Palitaw", {"img": "Puto bumbong"}],
+  ["culture", "easy", "📸 Anong merienda 'to?", "Turon", "Banana cue", "Camote cue", "Maruya", {"img": "Turon (food)"}],
+  ["culture", "easy", "📸 Ano ang tawag dito?", "Taho", "Sago't gulaman", "Soya milk", "Binatog", {"img": "Taho"}],
+  ["culture", "medium", "📸 Anong purple na dessert 'to?", "Ube halaya", "Ube cheese pandesal", "Ube leche flan", "Ube ice cream", {"img": "Ube halaya"}],
+  ["culture", "easy", "📸 Anong hayop 'to?", "Philippine tarsier", "Slow loris", "Lemur", "Bushbaby", {"img": "Philippine tarsier"}],
+  ["culture", "easy", "📸 What is the name of this national bird?", "Philippine eagle", "Brahminy kite", "Bald eagle", "Philippine hawk-eagle", {"img": "Philippine eagle"}],
+  ["culture", "medium", "📸 Anong hayop 'to? Makikita lang sa Mindoro!", "Tamaraw", "Carabao", "Anoa", "Philippine deer", {"img": "Tamaraw"}],
+  ["culture", "easy", "📸 Anong sasakyan 'to?", "Jeepney", "Tricycle", "Multicab", "FX", {"img": "Jeepney"}],
+  ["culture", "easy", "📸 Anong Christmas decor 'to?", "Parol", "Belen", "Christmas wreath", "Capiz lamp", {"img": "Parol"}],
+  ["culture", "easy", "📸 Ano ang tawag sa tindahang 'to?", "Sari-sari store", "Carinderia", "Talipapa", "Tiangge", {"img": "Sari-sari store"}],
+  ["culture", "easy", "📸 Anong bahay 'to?", "Bahay kubo", "Bahay na bato", "Nipa hut resort", "Ifugao house", {"img": "Bahay kubo"}],
+  ["culture", "medium", "📸 Anong formal wear 'to?", "Barong Tagalog", "Terno", "Baro't saya", "Malong", {"img": "Barong tagalog"}],
+  ["culture", "medium", "📸 Anong sayaw 'to?", "Tinikling", "Cariñosa", "Pandanggo sa Ilaw", "Singkil", {"img": "Tinikling"}],
+  ["culture", "medium", "📸 Anong laro 'to?", "Sungka", "Sipa", "Piko", "Patintero", {"img": "Sungka"}],
+  ["history", "easy", "📸 Sinong bayani 'to?", "José Rizal", "Andrés Bonifacio", "Emilio Aguinaldo", "Apolinario Mabini", {"img": "José Rizal"}],
+  ["history", "easy", "📸 Sinong bayani 'to?", "Andrés Bonifacio", "José Rizal", "Antonio Luna", "Emilio Jacinto", {"img": "Andrés Bonifacio"}],
+  ["history", "medium", "📸 Sinong bayani 'to?", "Apolinario Mabini", "Marcelo H. del Pilar", "Graciano López Jaena", "Emilio Jacinto", {"img": "Apolinario Mabini"}],
+  ["history", "medium", "📸 Who is this?", "Emilio Aguinaldo", "Manuel L. Quezon", "Andrés Bonifacio", "Artemio Ricarte", {"img": "Emilio Aguinaldo"}],
+  ["history", "medium", "📸 Who is this?", "Manuel L. Quezon", "Sergio Osmeña", "Manuel Roxas", "Elpidio Quirino", {"img": "Manuel L. Quezon"}],
+  ["history", "hard", "📸 Sinong heneral 'to?", "Antonio Luna", "Gregorio del Pilar", "Miguel Malvar", "Macario Sakay", {"img": "Antonio Luna"}],
+  ["history", "medium", "📸 Who is this hero, called the Mother of the Katipunan?", "Melchora Aquino", "Gabriela Silang", "Gregoria de Jesús", "Teresa Magbanua", {"img": "Melchora Aquino"}],
+  ["politics", "medium", "🗣️ Who said it?", "Ninoy Aquino", "José Rizal", "Manuel L. Quezon", "Andrés Bonifacio", {"quote": "The Filipino is worth dying for."}],
+  ["history", "medium", "🗣️ Who said it?", "Manuel L. Quezon", "Emilio Aguinaldo", "Sergio Osmeña", "Manuel Roxas", {"quote": "I would rather have a government run like hell by Filipinos than a government run like heaven by the Americans."}],
+  ["politics", "medium", "🗣️ Who said it?", "Miriam Defensor Santiago", "Imelda Marcos", "Loren Legarda", "Corazon Aquino", {"quote": "I eat death threats for breakfast."}],
+  ["history", "hard", "🗣️ In \"Noli Me Tángere\", which character says this (English translation)?", "Elías", "Crisóstomo Ibarra", "Padre Dámaso", "Sisa", {"quote": "I die without seeing the dawn brighten over my native land. You who will see it, welcome it!"}],
+  ["history", "medium", "🗣️ In the film \"Heneral Luna\", who shouts this?", "Antonio Luna", "Emilio Aguinaldo", "Apolinario Mabini", "Gregorio del Pilar", {"quote": "Bayan o sarili? Pumili ka!"}],
+  ["showbiz", "easy", "🗣️ Who delivered this iconic movie line as Lavinia?", "Cherie Gil", "Sharon Cuneta", "Nora Aunor", "Maricel Soriano", {"quote": "You're nothing but a second-rate, trying hard copycat!"}],
+  ["showbiz", "easy", "🗣️ Who said this in the film \"Himala\"?", "Nora Aunor", "Vilma Santos", "Sharon Cuneta", "Maricel Soriano", {"quote": "Walang himala!"}],
+  ["showbiz", "easy", "🗣️ Sino ang nagsabi nito sa \"One More Chance\"?", "Popoy (John Lloyd Cruz)", "Basha (Bea Alonzo)", "Trisha (Maja Salvador)", "Chinggay (Janus del Prado)", {"quote": "She loved me at my worst. You had me at my best."}],
+  ["showbiz", "medium", "🗣️ Whose Miss Universe motto is this?", "Pia Wurtzbach", "Catriona Gray", "Gloria Diaz", "Megan Young", {"quote": "Confidently beautiful with a heart."}],
+  ["showbiz", "easy", "🗣️ Kaninong catchphrase ito?", "Willie Revillame", "Vic Sotto", "Vice Ganda", "Luis Manzano", {"quote": "Bigyan ng jacket 'yan!"}],
+  ["showbiz", "medium", "🗣️ Kaninong sign-off ito?", "Boy Abunda", "Vice Ganda", "Luis Manzano", "Toni Gonzaga", {"quote": "Make your mama proud!"}],
+  ["showbiz", "medium", "🗣️ Kaninong catchphrase ito?", "Kuya Kim Atienza", "Mike Enriquez", "Noli de Castro", "Raffy Tulfo", {"quote": "Ang buhay ay weather-weather lang!"}],
+  ["showbiz", "medium", "🗣️ Kaninong famous line ito?", "Mike Enriquez", "Noli de Castro", "Ted Failon", "Kuya Kim Atienza", {"quote": "Hindi namin kayo tatantanan!"}],
+  ["showbiz", "hard", "🗣️ Kaninong famous greeting ito?", "Noli de Castro", "Mike Enriquez", "Korina Sanchez", "Ted Failon", {"quote": "Magandang gabi, bayan!"}],
+  ["genz", "easy", "🗣️ Sino ang laging nagsasabi nito?", "Your nanay", "Your crush", "Your barkada", "Your prof", {"quote": "Pag ako naghanap diyan at nakita ko, lagot ka sa 'kin!"}],
+  ["genz", "easy", "🗣️ Sino ang laging nagtatanong nito sa family reunion?", "Your titas and titos", "Your jowa", "Your boss", "Your classmates", {"quote": "Kailan ka mag-aasawa?"}],
+  ["genz", "easy", "🗣️ Sino ang sumisigaw nito sa jeep?", "A passenger who wants to get off", "The driver", "The barker", "A traffic enforcer", {"quote": "Para po!"}],
+  ["genz", "easy", "Crush mo nag-seen lang sa chat mo 😭 Ano ang tawag dito?", "Seenzone", "Friendzone", "Benched", "Ghosted na agad"],
+  ["genz", "easy", "Ka-talking stage mo biglang nawala nang walang paalam. Anong tawag dun?", "Ghosting", "Seenzone", "Breadcrumbing", "Cooking"],
+  ["genz", "easy", "Ano ang \"jowa\"?", "Boyfriend or girlfriend", "Best friend", "Classmate", "Ex"],
+  ["genz", "easy", "Kapag sinabing \"jowable\" ang isang tao, ibig sabihin…", "Pwedeng maging jowa", "May jowa na", "Ayaw magka-jowa", "Kakabreak lang"],
+  ["genz", "easy", "Ano ang ibig sabihin ng \"Tara, G!\"?", "Let's go, game!", "Go home na", "Galit na ako", "Good night"],
+  ["genz", "easy", "Sabi ng barkada mo \"omsim\". Ano ibig sabihin?", "Mismo (exactly)", "Oh my, sige", "Oo, miss kita", "Ang mahal"],
+  ["genz", "easy", "\"Keri mo 'yan!\" means…", "You can handle it", "You're so cute", "You're late", "You owe me"],
+  ["genz", "easy", "Ano ang \"hugot\" line?", "An emotional line from personal heartbreak", "A pickup line", "A political slogan", "A tongue twister"],
+  ["genz", "easy", "Siya yung nagpakilig tapos iniwan ka sa ere. Ano siya?", "Paasa", "Marupok", "Jowable", "Lodi"],
+  ["genz", "easy", "Isang \"sorry\" lang, bati na ulit kayo ng ex mo. Ikaw ay…", "Marupok", "Paasa", "Petmalu", "Jologs"],
+  ["genz", "easy", "Anong singer ang nagiging meme tuwing September dahil sa Christmas album niya?", "Jose Mari Chan", "Gary Valenciano", "Martin Nievera", "Ogie Alcasid"],
+  ["genz", "easy", "Anong tawag sa September to December, kung kailan Christmas season na agad sa Pinas?", "Ber months", "Holiday rush", "Paskong Pinoy weeks", "Simbang gabi season"],
+  ["genz", "easy", "\"Filipino time\" usually means…", "Being late", "Being early", "Siesta time", "Merienda time"],
+  ["genz", "easy", "Ano ang \"unli-rice\"?", "Unlimited rice", "Imported rice", "Fried rice", "Rice with ulam"],
+  ["genz", "medium", "\"Petsa de peligro\" refers to…", "The broke days before payday", "Exam week", "Typhoon season", "Your birthday week"],
+  ["genz", "easy", "Ano ang \"pasalubong\"?", "Gifts you bring home from a trip", "A welcome party", "A travel bag", "A souvenir shop"],
+  ["genz", "medium", "Ano ang ibig sabihin ng \"SKL\" sa comments?", "Share ko lang", "Sana kasama lahat", "Sige, kita later", "Sobrang kilig lang"],
+  ["genz", "medium", "Makikita mo \"CTTO\" sa mga post. Ano meaning?", "Credits to the owner", "Click to take over", "Copy this to others", "Can't talk, tulog"],
+  ["genz", "medium", "Ano ang ibig sabihin ng \"mema\"?", "May masabi lang", "Memorize mo", "Meme ko 'yan", "Medyo mahal"],
+  ["genz", "medium", "\"Kalurks\" is short for…", "Nakakaloka", "Kalokohan", "Kalungkot", "Kalayaan"],
+  ["genz", "medium", "\"Eme\" means…", "Just kidding / nonsense", "Emergency", "Email me", "Eat more"],
+  ["genz", "medium", "Ang \"awra\" ay…", "Posing with confidence and style", "Getting angry", "Being sleepy", "Eating a lot"],
+  ["genz", "medium", "\"Walang forever\" means…", "Love doesn't last", "There's no tomorrow", "No more Wi-Fi", "The store is closed"],
+  ["genz", "medium", "\"Mars\" or \"Pars\" is a friendly way to call…", "A friend (mare/pare)", "Your parents", "Your partner", "A stranger"],
+  ["genz", "hard", "Tawag sa taong baduy or tacky ang style…", "Jologs", "Conyo", "Sosyal", "Petmalu"],
+  ["genz", "hard", "Kapag \"nganga\" ka, ibig sabihin…", "You were left with nothing", "You won big", "You're very sleepy", "You're in love"],
 ];
 
 const TOPIC_LABEL = {
   history: 'Philippine history', politics: 'Philippine politics', culture: 'Filipino culture',
   showbiz: 'Showbiz & chismis', social: 'Viral & trending', sports: 'Philippine sports',
+  genz: 'Taglish & Gen Z',
 };
 
-const TOPIC_OF = {
-  'ph-history': 'history', 'ph-politics': 'politics', 'ph-culture': 'culture',
-  'ph-showbiz': 'showbiz', 'ph-social': 'social', 'ph-sports': 'sports',
+// Which built-in questions belong to each category. Row: [topic, difficulty, q, correct, w1, w2, w3, extra?]
+const byTopic = (...topics) => (r) => topics.includes(r[0]);
+const BANK_FILTER = {
+  'ph-all': () => true,
+  'ph-history': byTopic('history'),
+  'ph-politics': byTopic('politics'),
+  'ph-culture': byTopic('culture'),
+  'ph-showbiz': byTopic('showbiz'),
+  'ph-social': byTopic('social', 'genz'),
+  'ph-sports': byTopic('sports'),
+  'ph-genz': byTopic('genz', 'social'),
+  'ph-quotes': (r) => Boolean(r[7] && r[7].quote),
+  'ph-pics': (r) => Boolean(r[7] && r[7].img),
 };
+const bankUsed = new Map(); // question text -> last time it was played (so players see fresh ones first)
 
 // ---------- State ----------
 const pools = new Map();    // category -> [{text, choices, answer, difficulty, category, createdAt}]
@@ -269,9 +385,21 @@ function shuffle(arr) {
   return a;
 }
 
-function makeQuestion(text, correct, wrong, difficulty, category) {
+function makeQuestion(text, correct, wrong, difficulty, category, extra = {}) {
   const choices = shuffle([correct, ...wrong]);
-  return { text, choices, answer: choices.indexOf(correct), difficulty, category, createdAt: Date.now() };
+  const q = { text, choices, answer: choices.indexOf(correct), difficulty, category, createdAt: Date.now() };
+  if (extra.quote) q.quote = extra.quote;
+  if (extra.img) q.imgTitle = extra.img;
+  return q;
+}
+
+// Attach photo info to picture questions. Returns false if the photo isn't available (skip the question).
+function withImage(q) {
+  if (!q.imgTitle) return true;
+  const img = images.ready(q.imgTitle);
+  if (!img) return false;
+  q.image = img;
+  return true;
 }
 
 function remember(category, texts) {
@@ -312,11 +440,15 @@ Fairness and safety rules (very important, these are about real people):
 - Politics: strictly neutral and factual (who, what, when, where). No opinions, no loaded words, no favoring any party or politician, no questions about controversies that are only allegations.
 - Funny questions should laugh with Filipinos, not at any region, group, religion or person. No insults or body shaming.
 
-Style: keep questions short (under 25 words). ${t.search ? 'Mix serious and fun.' : ''} Taglish is fine where it fits the topic and tone.
+Audience: Filipino Gen Z and millennials playing for fun with friends. Make it entertaining and relatable, like a viral meme page or a game show, not a school exam. Use playful Taglish in fun topics (e.g. "Anong ulam 'to?", "Sino'ng nagsabi nito?"), and clear English or Taglish in serious ones.
+Style: keep questions short (under 25 words). ${t.search ? 'Mix serious and fun.' : ''} Vary the question types:
+- "Who said it?" questions: put the exact quote in a "quote" field and ask who said it (e.g. "🗣️ Sino'ng nagsabi nito?"). Only real, well-documented quotes from movies, TV, speeches or public statements, never invented ones. No song lyrics.
+- Picture questions${t.kind === 'image' ? ' (make ALL questions picture questions)' : ' (about 1 in 5 questions, where it fits)'}: add an "image" field with the exact English Wikipedia article title whose main photo shows the answer, e.g. "Chocolate Hills", "Sinigang", "Philippine eagle", "José Rizal". Only landmarks, places, food, animals, objects, and historical figures who died before 1950. Never living people or celebrities. The question must not name the answer (ask "📸 Anong lugar 'to?").
+${t.kind === 'quote' ? 'Make ALL questions "Who said it?" questions with a "quote" field.' : ''}
 Difficulty mix: about 40% "easy", 40% "medium", 20% "hard".
 ${avoid.length ? `Do not repeat or closely copy any of these earlier questions:\n${avoid.map((q) => `- ${q}`).join('\n')}\n` : ''}
 Reply with ONLY a JSON array, no other text, in this exact shape:
-[{"q": "question text", "correct": "right answer", "wrong": ["wrong 1", "wrong 2", "wrong 3"], "difficulty": "easy"}]`;
+[{"q": "question text", "correct": "right answer", "wrong": ["wrong 1", "wrong 2", "wrong 3"], "difficulty": "easy", "quote": "only for who-said-it questions", "image": "only for picture questions"}]`;
 }
 
 // ---------- API ----------
@@ -379,9 +511,14 @@ async function generate(category) {
     if (seen.has(key)) continue;
     seen.add(key);
     const diff = ['easy', 'medium', 'hard'].includes(o.difficulty) ? o.difficulty : 'medium';
-    out.push(makeQuestion(o.q.trim(), o.correct.trim(), o.wrong.map((w) => w.trim()), diff, t.label));
+    const extra = {};
+    if (typeof o.quote === 'string' && o.quote.trim().length > 3 && o.quote.length <= 240) extra.quote = o.quote.trim();
+    if (typeof o.image === 'string' && o.image.trim() && o.image.length <= 120) extra.img = o.image.trim();
+    out.push(makeQuestion(o.q.trim(), o.correct.trim(), o.wrong.map((w) => w.trim()), diff, t.label, extra));
   }
-  return out;
+  // Load the photos now; picture questions without a free photo are dropped.
+  const ok = await Promise.all(out.map((q) => (q.imgTitle ? images.prepare(q.imgTitle) : true)));
+  return out.filter((_, i) => ok[i]);
 }
 
 function refill(category) {
@@ -414,15 +551,28 @@ function prune(category) {
 }
 
 function fromBank(category, amount, difficulty, exclude) {
-  const topic = TOPIC_OF[category];
+  const own = BANK_FILTER[category] || (() => true);
   const fits = (r) => difficulty === 'mixed' || r[1] === difficulty;
-  const order = (rows) => shuffle(rows.filter(fits)).concat(shuffle(rows.filter((r) => !fits(r))));
-  const usable = BANK.filter((r) => !exclude.has(r[2]));
-  // The category's own topic first; borrow from other Philippine topics only if needed.
-  const rows = topic
-    ? order(usable.filter((r) => r[0] === topic)).concat(order(usable.filter((r) => r[0] !== topic)))
-    : order(usable);
-  return rows.slice(0, amount).map((r) => makeQuestion(r[2], r[3], [r[4], r[5], r[6]], r[1], TOPIC_LABEL[r[0]]));
+  // Least recently played first; random among equals, so every game feels fresh.
+  const order = (rows) => shuffle(rows).sort((a, b) => (bankUsed.get(a[2] + a[3]) || 0) - (bankUsed.get(b[2] + b[3]) || 0));
+  const usable = BANK.filter((r) => !exclude.has(r[2] + r[3]));
+  const groups = [
+    usable.filter((r) => own(r) && fits(r)),
+    usable.filter((r) => own(r) && !fits(r)),
+    usable.filter((r) => !own(r) && fits(r)), // borrow from other Philippine topics only if needed
+    usable.filter((r) => !own(r) && !fits(r)),
+  ];
+  const out = [];
+  for (const group of groups) {
+    for (const r of order(group)) {
+      if (out.length >= amount) break;
+      const q = makeQuestion(r[2], r[3], [r[4], r[5], r[6]], r[1], TOPIC_LABEL[r[0]], r[7]);
+      if (!withImage(q)) continue; // photo not ready: skip for now
+      bankUsed.set(r[2] + r[3], Date.now());
+      out.push(q);
+    }
+  }
+  return out;
 }
 
 // Take `amount` questions, preferring the requested difficulty.
@@ -433,6 +583,8 @@ async function getPhQuestions({ amount, difficulty, category }) {
     pool = prune(category);
   }
 
+  pool = pool.filter(withImage); // drop AI picture questions whose photo failed
+  pools.set(category, pool);
   const matches = (q) => difficulty === 'mixed' || q.difficulty === difficulty;
   const picked = [];
   for (const pass of [matches, () => true]) {
@@ -442,7 +594,7 @@ async function getPhQuestions({ amount, difficulty, category }) {
     }
   }
   if (picked.length < amount) {
-    picked.push(...fromBank(category, amount - picked.length, difficulty, new Set(picked.map((q) => q.text))));
+    picked.push(...fromBank(category, amount - picked.length, difficulty, new Set(picked.map((q) => q.text + q.choices[q.answer]))));
   }
   if (pool.length < 15) refill(category); // top up in the background
   return shuffle(picked);
@@ -452,6 +604,9 @@ async function getPhQuestions({ amount, difficulty, category }) {
 function prewarm(category) {
   if (isPhCategory(category) && prune(category).length < 15) refill(category);
 }
+
+// Load the built-in picture questions' photos shortly after the server starts.
+setTimeout(() => images.warm(BANK.filter((r) => r[7] && r[7].img).map((r) => r[7].img)).catch(() => {}), 3000);
 
 const PH_CATEGORY_LIST = Object.entries(PH_TOPICS).map(([id, t]) => ({ id, name: t.name, group: 'Philippines' }));
 

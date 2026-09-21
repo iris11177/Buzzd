@@ -11,6 +11,7 @@ const app = express();
 app.disable('x-powered-by');
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'], maxAge: '1h' }));
 app.get('/api/categories', (_req, res) => res.json({ categories: CATEGORY_LIST, aiEnabled }));
+app.get('/img/:id', require('./images').serve); // photos for picture questions
 app.get('/healthz', (_req, res) => res.send('ok'));
 
 const server = http.createServer(app);
@@ -164,6 +165,10 @@ function questionPayload(room) {
     index: room.qIndex + 1,
     total: room.questions.length,
     text: q.text,
+    quote: q.quote || null,
+    image: q.image ? q.image.url : null,
+    imageCredit: q.image ? q.image.credit : null,
+    imageSource: q.image ? q.image.source : null,
     choices: q.choices,
     category: q.category,
     difficulty: q.difficulty,
